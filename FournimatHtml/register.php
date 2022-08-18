@@ -1,3 +1,98 @@
+<?php
+// Include config file
+require_once "pdo.php";
+ 
+// Define variables and initialize with empty values
+$numeroclient = $password = $confirm_password = "";
+$numeroclient_err = $password_err = $confirm_password_err = "";
+
+// Processing form data when form is submitted
+if($_SERVER["REQUEST_METHOD"] == "POST"){
+ 
+    // Validate numeroclient
+    if(empty(trim($_POST["numeroclient"]))){
+        $numeroclient_err = "Entrez votre numéro client.";
+    } elseif(!preg_match('/^[a-zA-Z0-9_]+$/', trim($_POST["numeroclient"]))){
+        $numeroclient_err = "Le numéro client contient seulement des lettres, nombres, et underscores.";
+    } else{
+        // Prepare a select statement
+        $sql = "SELECT id FROM user WHERE numeroclient = :numeroclient";
+        
+        if($stmt = $pdo->prepare($sql)){
+            // Bind variables to the prepared statement as parameters
+            $stmt->bindParam(":numeroclient", $param_numeroclient, PDO::PARAM_STR);
+            
+            // Set parameters
+            $param_numeroclient = trim($_POST["numeroclient"]);
+            
+            // Attempt to execute the prepared statement
+            if($stmt->execute()){
+                if($stmt->rowCount() == 1){
+                    $numeroclient_err = "Ce numéro client est déjà inscrit.";
+                } else{
+                    $numeroclient = trim($_POST["numeroclient"]);
+                }
+            } else{
+                echo "Oops! Quelque chose c'est mal passé. Veuillez recommencer plus tard.";
+            }
+
+            // Close statement
+            unset($stmt);
+        }
+    }
+
+// Validate password
+    if(empty(trim($_POST["password"]))){
+        $password_err = "Entrez un mot de passe.";     
+    } elseif(strlen(trim($_POST["password"])) < 6){
+        $password_err = "Le mot de passe doit contenir au moins 6 caractères.";
+    } else{
+        $password = trim($_POST["password"]);
+    }
+    
+    // Validate confirm password
+    if(empty(trim($_POST["confirm_password"]))){
+        $confirm_password_err = "Veuillez confirmer votre mot de passe.";     
+    } else{
+        $confirm_password = trim($_POST["confirm_password"]);
+        if(empty($password_err) && ($password != $confirm_password)){
+            $confirm_password_err = "le mot de passe ne correspond pas.";
+        }
+    }
+    
+    // Check input errors before inserting in database
+    if(empty($numeroclient_err) && empty($password_err) && empty($confirm_password_err)){
+        
+        // Prepare an insert statement
+        $sql = "INSERT INTO user (numeroclient, password) VALUES (:numeroclient, :password)";
+         
+        if($stmt = $pdo->prepare($sql)){
+            // Bind variables to the prepared statement as parameters
+            $stmt->bindParam(":numeroclient", $param_numeroclient, PDO::PARAM_STR);
+            $stmt->bindParam(":password", $param_password, PDO::PARAM_STR);
+            
+            // Set parameters
+            $param_numeroclient = $numeroclient;
+            $param_password = password_hash($password, PASSWORD_DEFAULT); // Creates a password hash
+            
+            // Attempt to execute the prepared statement
+            if($stmt->execute()){
+                // Redirect to login page
+                header("location: login.php");
+            } else{
+                echo "Oops! Quelque chose c'est mal passé. Veuillez recommencer plus tard.";
+            }
+
+            // Close statement
+            unset($stmt);
+        }
+    }
+    
+    // Close connection
+    unset($pdo);
+}
+?>
+ 
 <!DOCTYPE html>
 <html lang="en">
 
@@ -113,57 +208,60 @@
     <!-- Page Header Start -->
     <div class="container-fluid bg-secondary mb-5">
         <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 150px">
-            <h1 class="font-weight-semi-bold text-uppercase mb-3">Connexion</h1>
+            <h1 class="font-weight-semi-bold text-uppercase mb-3">Inscription</h1>
             <div class="d-inline-flex">
                 <p class="m-0"><a href="index.php">Home</a></p>
                 <p class="m-0 px-2">-</p>
-                <p class="m-0">Connexion</p>
+                <p class="m-0">Inscription</p>
             </div>
         </div>
     </div>
     <!-- Page Header End -->
 
-
     <!-- Contact Start -->
     <div class="container-fluid pt-5">
         <div class="text-center mb-4">
-            <h2 class="section-title px-5"><span class="px-2">Formulaire de connexion client</span></h2>
+            <h2 class="section-title px-5"><span class="px-2">Formulaire d'incription client</span></h2>
         </div>
+
         <div class="row px-xl-5">
             <div class="col-lg-7 mb-5">
                 <div class="contact-form">
                     <div id="success"></div>
-                    <form name="sentMessage" id="contactForm" novalidate="novalidate">
-                        <div class="control-group">
-                            <input type="email" class="form-control" id="email" placeholder="Votre Email"
-                                required="required" data-validation-required-message="Veuillez saisir votre email" />
-                            <p class="help-block text-danger"></p>
+                    <h2>Connexion</h2>
+                    <p>Veuillez remplir les champs.</p>
+                    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+                        <div class="form-group">
+                            <label>Numéro Client</label>
+                            <input type="text" name="numeroclient" class="form-control <?php echo (!empty($numeroclient_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $numeroclient; ?>">
+                            <span class="invalid-feedback"><?php echo $numeroclient_err; ?></span>
+                        </div>            
+                        <div class="form-group">
+                            <label>Mot de passe</label>
+                            <input type="password" name="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $password; ?>">
+                            <span class="invalid-feedback"><?php echo $password_err; ?></span>
                         </div>
-                        <div class="control-group">
-                            <input type="text" class="form-control" id="subject" placeholder="Votre mot de passe"
-                                required="required" data-validation-required-message="Veuillez saisir le nom de votre société" />
-                            <p class="help-block text-danger"></p>
+                        <div class="form-group">
+                            <label>Confirmer Mot de passe</label>
+                            <input type="password" name="confirm_password" class="form-control <?php echo (!empty($confirm_password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $confirm_password; ?>">
+                            <span class="invalid-feedback"><?php echo $confirm_password_err; ?></span>
                         </div>
-                        <div class="control-group">
-                            <input type="text" class="form-control" id="subject" placeholder="Votre numéro client"
-                                required="required" data-validation-required-message="Veuillez saisir votre numéro client" />
-                            <p class="help-block text-danger"></p>
+                        <div class="form-group">
+                            <input type="submit" class="btn btn-primary" value="Submit">
+                            <input type="reset" class="btn btn-secondary ml-2" value="Reset">
                         </div>
-                        <div>
-                            <button class="btn btn-primary py-2 px-4" type="submit" id="sendMessageButton">Se connecter</button>
-                        </div>
+                        <p>Vous avez déjà un compte? <a href="login.php">Connectez-vous</a>.</p>
                     </form>
                 </div>
             </div>
             <div class="col-lg-5 mb-5">
                 <h5 class="font-weight-semi-bold mb-3">Attention</h5>
-                <p>Vous recevrez votre numéro client lors de l'insription sur notre site web. Toutefois si vous êtes un ancient client, vous trouverez votre numéro client sur l'une de vos facture post janvier 2022.</p>
+                <p>Le site Fournimat est réservé à sa clientèle. Si vous n'êtes pas un client existant, vous ne pourrez ni créer de compte client, ni commander sur notre shop en ligne.</p>
             </div>
         </div>
     </div>
-    <!-- Contact End -->
-
-
+    <!-- Contact End --> 
+    
     <!-- Footer Start -->
     <div class="container-fluid bg-secondary text-dark mt-5 pt-5">
         <div class="row px-xl-5 pt-5">
@@ -220,5 +318,4 @@
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
 </body>
-
 </html>

@@ -1,4 +1,15 @@
-<!DOCTYPE html>
+<?php
+// Initialize the session
+session_start();
+ 
+// Check if the user is logged in, if not then redirect him to login page
+if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
+    header("location: login.php");
+    exit;
+}
+?>
+ 
+ <!DOCTYPE html>
 <html lang="en">
 
     <head>
@@ -113,59 +124,30 @@
     <!-- Page Header Start -->
     <div class="container-fluid bg-secondary mb-5">
         <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 150px">
-            <h1 class="font-weight-semi-bold text-uppercase mb-3">Connexion</h1>
+            <h1 class="font-weight-semi-bold text-uppercase mb-3">Inscription</h1>
             <div class="d-inline-flex">
                 <p class="m-0"><a href="index.php">Home</a></p>
                 <p class="m-0 px-2">-</p>
-                <p class="m-0">Connexion</p>
+                <p class="m-0">Bienvenue</p>
             </div>
         </div>
     </div>
     <!-- Page Header End -->
 
 
-    <!-- Contact Start -->
-    <div class="container-fluid pt-5">
-        <div class="text-center mb-4">
-            <h2 class="section-title px-5"><span class="px-2">Formulaire de connexion client</span></h2>
-        </div>
-        <div class="row px-xl-5">
-            <div class="col-lg-7 mb-5">
-                <div class="contact-form">
-                    <div id="success"></div>
-                    <form name="sentMessage" id="contactForm" novalidate="novalidate">
-                        <div class="control-group">
-                            <input type="email" class="form-control" id="email" placeholder="Votre Email"
-                                required="required" data-validation-required-message="Veuillez saisir votre email" />
-                            <p class="help-block text-danger"></p>
-                        </div>
-                        <div class="control-group">
-                            <input type="text" class="form-control" id="subject" placeholder="Votre mot de passe"
-                                required="required" data-validation-required-message="Veuillez saisir le nom de votre société" />
-                            <p class="help-block text-danger"></p>
-                        </div>
-                        <div class="control-group">
-                            <input type="text" class="form-control" id="subject" placeholder="Votre numéro client"
-                                required="required" data-validation-required-message="Veuillez saisir votre numéro client" />
-                            <p class="help-block text-danger"></p>
-                        </div>
-                        <div>
-                            <button class="btn btn-primary py-2 px-4" type="submit" id="sendMessageButton">Se connecter</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <div class="col-lg-5 mb-5">
-                <h5 class="font-weight-semi-bold mb-3">Attention</h5>
-                <p>Vous recevrez votre numéro client lors de l'insription sur notre site web. Toutefois si vous êtes un ancient client, vous trouverez votre numéro client sur l'une de vos facture post janvier 2022.</p>
+    <div class="row px-xl-5 justify-content-center">
+        <div class="col-lg-7 mb-5">
+            <div class="my-5">Bonjour <b><?php echo htmlspecialchars($_SESSION["numeroclient"]); ?></b>. Bienvenue sur notre nouveau site.</h1>
+                <a href="reset-password.php" class="btn btn-warning">Reset votre mot de passe</a>
+                <a href="logout.php" class="btn btn-danger ml-3">Se deconnecter de son compte</a>
             </div>
         </div>
     </div>
-    <!-- Contact End -->
 
 
-    <!-- Footer Start -->
-    <div class="container-fluid bg-secondary text-dark mt-5 pt-5">
+
+<!-- Footer Start -->
+<div class="container-fluid bg-secondary text-dark mt-5 pt-5">
         <div class="row px-xl-5 pt-5">
             <div class="col-lg-4 col-md-12 mb-5 pr-3 pr-xl-5">
                 <a href="" class="text-decoration-none">
@@ -202,7 +184,6 @@
     <!-- Footer End -->
 
 
-
     <!-- Back to Top -->
     <a href="#" class="btn btn-primary back-to-top"><i class="fa fa-angle-double-up"></i></a>
 
@@ -220,5 +201,4 @@
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
 </body>
-
 </html>

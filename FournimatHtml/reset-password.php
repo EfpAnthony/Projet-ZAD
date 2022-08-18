@@ -1,4 +1,77 @@
-<!DOCTYPE html>
+<?php
+// Initialize the session
+session_start();
+ 
+// Check if the user is logged in, otherwise redirect to login page
+if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
+    header("location: login.php");
+    exit;
+}
+ 
+// Include config file
+require_once "pdo.php";
+ 
+// Define variables and initialize with empty values
+$new_password = $confirm_password = "";
+$new_password_err = $confirm_password_err = "";
+ 
+// Processing form data when form is submitted
+if($_SERVER["REQUEST_METHOD"] == "POST"){
+ 
+    // Validate new password
+    if(empty(trim($_POST["new_password"]))){
+        $new_password_err = "Please enter the new password.";     
+    } elseif(strlen(trim($_POST["new_password"])) < 6){
+        $new_password_err = "Password must have atleast 6 characters.";
+    } else{
+        $new_password = trim($_POST["new_password"]);
+    }
+    
+    // Validate confirm password
+    if(empty(trim($_POST["confirm_password"]))){
+        $confirm_password_err = "Please confirm the password.";
+    } else{
+        $confirm_password = trim($_POST["confirm_password"]);
+        if(empty($new_password_err) && ($new_password != $confirm_password)){
+            $confirm_password_err = "Password did not match.";
+        }
+    }
+        
+    // Check input errors before updating the database
+    if(empty($new_password_err) && empty($confirm_password_err)){
+        // Prepare an update statement
+        $sql = "UPDATE user SET password = :password WHERE id = :id";
+        
+        if($stmt = $pdo->prepare($sql)){
+            // Bind variables to the prepared statement as parameters
+            $stmt->bindParam(":password", $param_password, PDO::PARAM_STR);
+            $stmt->bindParam(":id", $param_id, PDO::PARAM_INT);
+            
+            // Set parameters
+            $param_password = password_hash($new_password, PASSWORD_DEFAULT);
+            $param_id = $_SESSION["id"];
+            
+            // Attempt to execute the prepared statement
+            if($stmt->execute()){
+                // Password updated successfully. Destroy the session, and redirect to login page
+                session_destroy();
+                header("location: login.php");
+                exit();
+            } else{
+                echo "Oops! Something went wrong. Please try again later.";
+            }
+
+            // Close statement
+            unset($stmt);
+        }
+    }
+    
+    // Close connection
+    unset($pdo);
+}
+?>
+ 
+ <!DOCTYPE html>
 <html lang="en">
 
     <head>
@@ -113,11 +186,11 @@
     <!-- Page Header Start -->
     <div class="container-fluid bg-secondary mb-5">
         <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 150px">
-            <h1 class="font-weight-semi-bold text-uppercase mb-3">Connexion</h1>
+            <h1 class="font-weight-semi-bold text-uppercase mb-3">Inscription</h1>
             <div class="d-inline-flex">
                 <p class="m-0"><a href="index.php">Home</a></p>
                 <p class="m-0 px-2">-</p>
-                <p class="m-0">Connexion</p>
+                <p class="m-0">Inscription</p>
             </div>
         </div>
     </div>
@@ -127,45 +200,39 @@
     <!-- Contact Start -->
     <div class="container-fluid pt-5">
         <div class="text-center mb-4">
-            <h2 class="section-title px-5"><span class="px-2">Formulaire de connexion client</span></h2>
+            <h2 class="section-title px-5"><span class="px-2">Reset mot de passe</span></h2>
         </div>
+
         <div class="row px-xl-5">
             <div class="col-lg-7 mb-5">
                 <div class="contact-form">
                     <div id="success"></div>
-                    <form name="sentMessage" id="contactForm" novalidate="novalidate">
-                        <div class="control-group">
-                            <input type="email" class="form-control" id="email" placeholder="Votre Email"
-                                required="required" data-validation-required-message="Veuillez saisir votre email" />
-                            <p class="help-block text-danger"></p>
-                        </div>
-                        <div class="control-group">
-                            <input type="text" class="form-control" id="subject" placeholder="Votre mot de passe"
-                                required="required" data-validation-required-message="Veuillez saisir le nom de votre société" />
-                            <p class="help-block text-danger"></p>
-                        </div>
-                        <div class="control-group">
-                            <input type="text" class="form-control" id="subject" placeholder="Votre numéro client"
-                                required="required" data-validation-required-message="Veuillez saisir votre numéro client" />
-                            <p class="help-block text-danger"></p>
-                        </div>
-                        <div>
-                            <button class="btn btn-primary py-2 px-4" type="submit" id="sendMessageButton">Se connecter</button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="wrapper">
+            <h2>Reset Mot de passe</h2>
+            <p>Remplir les champs</p>
+            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post"> 
+            <div class="form-group">
+                <label>Nouveau mot de passe</label>
+                <input type="password" name="new_password" class="form-control <?php echo (!empty($new_password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $new_password; ?>">
+                <span class="invalid-feedback"><?php echo $new_password_err; ?></span>
             </div>
-            <div class="col-lg-5 mb-5">
-                <h5 class="font-weight-semi-bold mb-3">Attention</h5>
-                <p>Vous recevrez votre numéro client lors de l'insription sur notre site web. Toutefois si vous êtes un ancient client, vous trouverez votre numéro client sur l'une de vos facture post janvier 2022.</p>
+            <div class="form-group">
+                <label>Confirmer mot de passe</label>
+                <input type="password" name="confirm_password" class="form-control <?php echo (!empty($confirm_password_err)) ? 'is-invalid' : ''; ?>">
+                <span class="invalid-feedback"><?php echo $confirm_password_err; ?></span>
             </div>
+            <div class="form-group">
+                <input type="submit" class="btn btn-primary" value="Submit">
+                <a class="btn btn-link ml-2" href="welcome.php">Annuler</a>
+            </div>
+        </form>
+        </div>
         </div>
     </div>
     <!-- Contact End -->
-
-
-    <!-- Footer Start -->
-    <div class="container-fluid bg-secondary text-dark mt-5 pt-5">
+    
+        <!-- Footer Start -->
+        <div class="container-fluid bg-secondary text-dark mt-5 pt-5">
         <div class="row px-xl-5 pt-5">
             <div class="col-lg-4 col-md-12 mb-5 pr-3 pr-xl-5">
                 <a href="" class="text-decoration-none">
@@ -202,7 +269,6 @@
     <!-- Footer End -->
 
 
-
     <!-- Back to Top -->
     <a href="#" class="btn btn-primary back-to-top"><i class="fa fa-angle-double-up"></i></a>
 
@@ -220,5 +286,4 @@
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
 </body>
-
 </html>
